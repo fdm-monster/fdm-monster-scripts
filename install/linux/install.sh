@@ -132,6 +132,7 @@ install_nodejs() {
         exit 1
     fi
 
+    # Add to current session
     export PATH="$NODE_DIR/bin:$PATH"
 
     # Verify installation
@@ -325,12 +326,15 @@ create_cli_wrapper() {
     ln -sf "$BIN_DIR/fdm-monster" "$BIN_DIR/fdmm"
 
     if [[ ":$PATH:" != *":$BIN_DIR:"* ]]; then
+        # Add to current session
+        export PATH="$PATH:$BIN_DIR"
+
+        # Persist for future sessions
         local SHELL_RC="$HOME/.bashrc"
         [[ -f "$HOME/.zshrc" ]] && SHELL_RC="$HOME/.zshrc"
-
         echo "export PATH=\"\$PATH:$BIN_DIR\"" >> "$SHELL_RC"
 
-        print_success "CLI installed! To use immediately, copy and run:"
+        print_success "CLI created at $BIN_DIR/fdm-monster (alias: fdmm). To use immediately, copy and run:"
         echo ""
         echo -e "\033[1;32m    export PATH=\"\$PATH:$BIN_DIR\"\033[0m"
         echo ""
