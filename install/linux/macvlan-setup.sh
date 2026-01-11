@@ -66,7 +66,7 @@ if [[ "$resp" == "y" || "$resp" == "Y" ]]
 then
    docker network create -d macvlan --subnet=${network} --ip-range=${subnet} --gateway=${gateway} -o parent=${interface} ${name}
 else
-  echo "  Please make sure you have the needed mavlan brige created."
+  echo "  Please make sure you have the needed mavlan bridge created."
 fi
 
 
