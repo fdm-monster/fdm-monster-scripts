@@ -1,6 +1,23 @@
 #!/bin/bash
 # FDM Monster One-Click Installer for Linux
 # Usage: curl -fsSL https://raw.githubusercontent.com/fdm-monster/fdm-monster-scripts/main/install/linux/install.sh | bash
+#
+# ============================================================================
+# ENVIRONMENT VARIABLE OVERRIDES
+# ============================================================================
+# The following environment variables can be used to customize installation:
+#
+# FDMM_NODE_VERSION      - Node.js version to install (default: 24.12.0)
+# FDMM_NPM_PACKAGE       - NPM package to install (default: @fdm-monster/server)
+# FDMM_SERVER_PORT       - Server port (default: 4000)
+# FDMM_INSTALL_DIR       - Installation directory (default: $HOME/.fdm-monster)
+# FDMM_INSTALL_URL       - Installer script URL (default: GitHub main branch)
+# FDMM_OVERRIDE_ROOT     - Allow running as root (default: false, set to 'true' to override)
+#
+# Example:
+#   FDMM_NODE_VERSION="22.11.0" FDMM_SERVER_PORT="3000" bash install.sh
+#   FDMM_OVERRIDE_ROOT=true bash install.sh
+# ============================================================================
 
 set -e
 
@@ -10,15 +27,16 @@ readonly YELLOW='\033[1;33m'
 readonly BLUE='\033[0;34m'
 readonly NC='\033[0m'
 
-readonly CLI_VERSION="1.0.8"
+readonly CLI_VERSION="1.0.9"
 
-# Override configuration from environment variables
+# Configuration (see ENVIRONMENT VARIABLE OVERRIDES section above)
 NODE_VERSION="${FDMM_NODE_VERSION:-24.12.0}"
 NPM_PACKAGE="${FDMM_NPM_PACKAGE:-@fdm-monster/server}"
 INSTALL_DIR="${FDMM_INSTALL_DIR:-$HOME/.fdm-monster}"
 DEFAULT_PORT="${FDMM_SERVER_PORT:-4000}"
 DATA_DIR="$HOME/.fdm-monster-data"
 INSTALL_SCRIPT_URL="${FDMM_INSTALL_URL:-https://raw.githubusercontent.com/fdm-monster/fdm-monster-scripts/main/install/linux/install.sh}"
+OVERRIDE_ROOT="${FDMM_OVERRIDE_ROOT:-false}"
 
 # Helper functions
 print_banner() {
@@ -60,10 +78,16 @@ print_info() {
 }
 
 check_root() {
-    if [[ "$EUID" -eq 0 ]]; then
+    if [[ "$EUID" -eq 0 ]] && [[ "$OVERRIDE_ROOT" != "true" ]]; then
         print_error "Do not run as root"
+        print_info "To override this check, set FDMM_OVERRIDE_ROOT=true"
         exit 1
     fi
+
+    if [[ "$EUID" -eq 0 ]]; then
+        print_warning "Running as root (override enabled)"
+    fi
+
     return 0
 }
 
