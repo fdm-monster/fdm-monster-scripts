@@ -30,7 +30,7 @@ readonly YELLOW='\033[1;33m'
 readonly BLUE='\033[0;34m'
 readonly NC='\033[0m'
 
-readonly CLI_VERSION="1.0.10"
+readonly CLI_VERSION="1.0.11"
 
 # Configuration (see ENVIRONMENT VARIABLE OVERRIDES section above)
 NODE_VERSION="${FDMM_NODE_VERSION:-24.12.0}"
