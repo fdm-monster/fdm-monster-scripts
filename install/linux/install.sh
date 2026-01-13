@@ -7,12 +7,14 @@
 # ============================================================================
 # The following environment variables can be used to customize installation:
 #
+# FDMM_HOME                 - Home directory to use (default: $HOME)
+#                             Useful for chroot installations or custom user setups
 # FDMM_NODE_VERSION         - Node.js version to install (default: 24.12.0)
 # FDMM_NPM_PACKAGE          - NPM package to install (default: @fdm-monster/server)
 # FDMM_NPM_PACKAGE_VERSION  - NPM package version to install (default: latest)
 # FDMM_SERVER_PORT          - Server port (default: 4000)
-# FDMM_INSTALL_DIR          - Installation directory (default: $HOME/.fdm-monster)
-# FDMM_DATA_DIR             - Data directory (default $HOME/.fdm-monster-data)
+# FDMM_INSTALL_DIR          - Installation directory (default: $FDMM_HOME/.fdm-monster)
+# FDMM_DATA_DIR             - Data directory (default $FDMM_HOME/.fdm-monster-data)
 # FDMM_INSTALL_URL          - Installer script URL (default: GitHub main branch)
 # FDMM_OVERRIDE_ROOT        - Allow running as root (default: false, set to 'true' to override)
 #
@@ -20,6 +22,7 @@
 #   FDMM_NODE_VERSION="22.11.0" FDMM_SERVER_PORT="3000" bash install.sh
 #   FDMM_NPM_PACKAGE_VERSION="2.0.3" bash install.sh
 #   FDMM_OVERRIDE_ROOT=true bash install.sh
+#   FDMM_HOME=/home/myuser bash install.sh
 # ============================================================================
 
 set -e
@@ -30,15 +33,16 @@ readonly YELLOW='\033[1;33m'
 readonly BLUE='\033[0;34m'
 readonly NC='\033[0m'
 
-readonly CLI_VERSION="1.0.11"
+readonly CLI_VERSION="1.0.12"
 
 # Configuration (see ENVIRONMENT VARIABLE OVERRIDES section above)
+USER_HOME="${FDMM_HOME:-$HOME}"
 NODE_VERSION="${FDMM_NODE_VERSION:-24.12.0}"
 NPM_PACKAGE="${FDMM_NPM_PACKAGE:-@fdm-monster/server}"
 NPM_PACKAGE_VERSION="${FDMM_NPM_PACKAGE_VERSION:-}"
-INSTALL_DIR="${FDMM_INSTALL_DIR:-$HOME/.fdm-monster}"
+INSTALL_DIR="${FDMM_INSTALL_DIR:-$USER_HOME/.fdm-monster}"
 DEFAULT_PORT="${FDMM_SERVER_PORT:-4000}"
-DATA_DIR="${FDMM_DATA_DIR:-$HOME/.fdm-monster-data}"
+DATA_DIR="${FDMM_DATA_DIR:-$USER_HOME/.fdm-monster-data}"
 INSTALL_SCRIPT_URL="${FDMM_INSTALL_URL:-https://raw.githubusercontent.com/fdm-monster/fdm-monster-scripts/main/install/linux/install.sh}"
 OVERRIDE_ROOT="${FDMM_OVERRIDE_ROOT:-false}"
 
@@ -225,8 +229,8 @@ ensure_nodejs() {
 
     # Ensure PATH is set for current and future sessions
     export PATH="$NODE_DIR/bin:$PATH"
-    local SHELL_RC="$HOME/.bashrc"
-    [[ -f "$HOME/.zshrc" ]] && SHELL_RC="$HOME/.zshrc"
+    local SHELL_RC="$USER_HOME/.bashrc"
+    [[ -f "$USER_HOME/.zshrc" ]] && SHELL_RC="$USER_HOME/.zshrc"
     grep -q "$INSTALL_DIR/nodejs/bin" "$SHELL_RC" 2>/dev/null || \
         echo "export PATH=\"$INSTALL_DIR/nodejs/bin:\$PATH\"" >> "$SHELL_RC"
 
@@ -381,7 +385,7 @@ EOF
 create_cli_wrapper() {
     print_info "Creating CLI wrapper..."
 
-    local BIN_DIR="$HOME/.local/bin"
+    local BIN_DIR="$USER_HOME/.local/bin"
     mkdir -p "$BIN_DIR"
 
     # Try to copy the script, or download it if running from pipe
@@ -400,8 +404,8 @@ create_cli_wrapper() {
         export PATH="$PATH:$BIN_DIR"
 
         # Persist for future sessions
-        local SHELL_RC="$HOME/.bashrc"
-        [[ -f "$HOME/.zshrc" ]] && SHELL_RC="$HOME/.zshrc"
+        local SHELL_RC="$USER_HOME/.bashrc"
+        [[ -f "$USER_HOME/.zshrc" ]] && SHELL_RC="$USER_HOME/.zshrc"
         echo "export PATH=\"\$PATH:$BIN_DIR\"" >> "$SHELL_RC"
 
         print_success "CLI created at $BIN_DIR/fdm-monster (alias: fdmm). To use immediately, copy and run:"
@@ -499,7 +503,7 @@ handle_command() {
             print_success "Upgraded to version $INSTALLED_VERSION"
             ;;
         backup)
-            local BACKUP_DIR="$HOME/.fdm-monster-backups"
+            local BACKUP_DIR="$USER_HOME/.fdm-monster-backups"
             local TIMESTAMP=$(date +%Y%m%d-%H%M%S)
             local BACKUP_FILE="$BACKUP_DIR/fdm-monster-$TIMESTAMP.tar.gz"
 
@@ -530,7 +534,7 @@ handle_command() {
                 print_info "Using custom URL: $CUSTOM_URL"
             fi
 
-            local BIN_DIR="$HOME/.local/bin"
+            local BIN_DIR="$USER_HOME/.local/bin"
             local TEMP_FILE="/tmp/fdm-monster-cli-update.sh"
 
             if ! curl -fsSL "$UPDATE_URL" -o "$TEMP_FILE"; then
@@ -578,7 +582,7 @@ handle_command() {
 
             # Remove install directory and CLI
             rm -rf "$INSTALL_DIR"
-            rm -f "$HOME/.local/bin/fdm-monster" "$HOME/.local/bin/fdmm"
+            rm -f "$USER_HOME/.local/bin/fdm-monster" "$USER_HOME/.local/bin/fdmm"
 
             # Ask about data directory
             echo ""
