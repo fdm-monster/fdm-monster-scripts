@@ -11,6 +11,7 @@
 # FDMM_NPM_PACKAGE       - NPM package to install (default: @fdm-monster/server)
 # FDMM_SERVER_PORT       - Server port (default: 4000)
 # FDMM_INSTALL_DIR       - Installation directory (default: $HOME/.fdm-monster)
+# FDMM_DATA_DIR          - Data directory (default $HOME/.fdm-monster-data)
 # FDMM_INSTALL_URL       - Installer script URL (default: GitHub main branch)
 # FDMM_OVERRIDE_ROOT     - Allow running as root (default: false, set to 'true' to override)
 #
@@ -27,14 +28,14 @@ readonly YELLOW='\033[1;33m'
 readonly BLUE='\033[0;34m'
 readonly NC='\033[0m'
 
-readonly CLI_VERSION="1.0.9"
+readonly CLI_VERSION="1.0.10"
 
 # Configuration (see ENVIRONMENT VARIABLE OVERRIDES section above)
 NODE_VERSION="${FDMM_NODE_VERSION:-24.12.0}"
 NPM_PACKAGE="${FDMM_NPM_PACKAGE:-@fdm-monster/server}"
 INSTALL_DIR="${FDMM_INSTALL_DIR:-$HOME/.fdm-monster}"
 DEFAULT_PORT="${FDMM_SERVER_PORT:-4000}"
-DATA_DIR="$HOME/.fdm-monster-data"
+DATA_DIR="${FDMM_DATA_DIR:-$HOME/.fdm-monster-data}"
 INSTALL_SCRIPT_URL="${FDMM_INSTALL_URL:-https://raw.githubusercontent.com/fdm-monster/fdm-monster-scripts/main/install/linux/install.sh}"
 OVERRIDE_ROOT="${FDMM_OVERRIDE_ROOT:-false}"
 
