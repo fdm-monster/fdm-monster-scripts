@@ -486,6 +486,12 @@ handle_command() {
 
             print_info "Upgrading FDM Monster to $VERSION_DISPLAY..."
             $0 stop
+
+            # Ensure Node.js and Yarn are available
+            print_info "Checking FDM Monster requirements..."
+            ensure_nodejs
+            setup_yarn
+
             cd "$INSTALL_DIR"
 
             # Install package with or without version
