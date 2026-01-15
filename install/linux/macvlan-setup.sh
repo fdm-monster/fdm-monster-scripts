@@ -85,7 +85,6 @@ service:
     deploy:
       restart_policy:
         delay: 5s
-        #max_attempts: 3
         window: 120s
     networks:
       ${name}: # rename to mach your config option below

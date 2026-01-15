@@ -33,7 +33,7 @@ readonly YELLOW='\033[1;33m'
 readonly BLUE='\033[0;34m'
 readonly NC='\033[0m'
 
-readonly CLI_VERSION="1.0.14"
+readonly CLI_VERSION="1.0.15"
 
 # Configuration (see ENVIRONMENT VARIABLE OVERRIDES section above)
 USER_HOME="${FDMM_HOME:-$HOME}"
@@ -114,6 +114,8 @@ version_gt() {
 }
 
 check_dependencies() {
+    local skip_sudo_check="${1:-false}"
+
     print_info "Checking required dependencies..."
 
     local MISSING_DEPS=()
@@ -131,19 +133,21 @@ check_dependencies() {
         exit 1
     fi
 
-    # Check sudo availability and permissions
-    if command -v sudo &> /dev/null; then
-        if ! sudo -n true 2>/dev/null; then
-            print_warning "sudo requires password - you may be prompted during installation"
-            # Test sudo access with password prompt
-            if ! sudo -v; then
-                print_error "sudo access required for systemd service management"
-                exit 1
+    # Check sudo availability and permissions (skip for user-only operations)
+    if [[ "$skip_sudo_check" != "true" ]]; then
+        if command -v sudo &> /dev/null; then
+            if ! sudo -n true 2>/dev/null; then
+                print_warning "sudo requires password - you may be prompted during installation"
+                # Test sudo access with password prompt
+                if ! sudo -v; then
+                    print_error "sudo access required for systemd service management"
+                    exit 1
+                fi
             fi
+            print_success "sudo access verified"
+        else
+            print_warning "sudo not available - systemd service setup may fail"
         fi
-        print_success "sudo access verified"
-    else
-        print_warning "sudo not available - systemd service setup may fail"
     fi
 
     print_success "All required dependencies found"
@@ -577,6 +581,26 @@ handle_command() {
             wait_for_service
             print_instructions
             ;;
+        install-user)
+            # User-level installation (no sudo required for these steps)
+            # Used by chroot environments to run as pi user
+            print_banner
+            check_dependencies true
+            detect_platform
+            ensure_nodejs
+            setup_yarn
+            install_fdm_monster
+            create_cli_wrapper
+            print_success "User-level installation complete"
+            print_info "Run 'install-root' with appropriate privileges to complete setup"
+            ;;
+        install-root)
+            # Root-level installation (requires sudo)
+            # Used by chroot environments to run systemd service setup
+            create_systemd_service
+            wait_for_service
+            print_instructions
+            ;;
         uninstall)
             print_warning "Uninstalling FDM Monster..."
             $0 stop
@@ -613,6 +637,8 @@ handle_command() {
             echo ""
             echo "Commands:"
             echo "  install            - (Re)install FDM Monster"
+            echo "  install-user       - User-level installation (nodejs, yarn, fdm-monster, CLI wrapper)"
+            echo "  install-root       - Root-level installation (systemd service setup)"
             echo "  start              - Start FDM Monster"
             echo "  stop               - Stop FDM Monster"
             echo "  restart            - Restart FDM Monster"
@@ -626,6 +652,8 @@ handle_command() {
             echo ""
             echo "Examples:"
             echo "  fdmm install                              # (Re)install FDM Monster"
+            echo "  fdmm install-user                         # Install user-level components only"
+            echo "  fdmm install-root                         # Install root-level components only"
             echo "  fdmm status                               # Check status"
             echo "  fdmm backup                               # Create backup"
             echo "  fdmm upgrade                              # Upgrade to latest"
@@ -731,32 +759,17 @@ print_instructions() {
     return 0
 }
 
-# Main function - handles both install and CLI commands
 main() {
     validate_semver "$NODE_VERSION"
 
-    # If called with a command argument, handle it as CLI
-    if [[ $# -gt 0 ]]; then
-        handle_command "$@"
-        exit $?
+    if [[ $# -eq 0 ]]; then
+        set -- "install"
     fi
 
-    # Otherwise, run installer
-    print_banner
-    check_root
-    check_dependencies
-    detect_platform
-    ensure_nodejs
-    setup_yarn
-    install_fdm_monster
-    create_systemd_service
-    create_cli_wrapper
-    wait_for_service
-    print_instructions
-
-    return 0
+    # Handle the command
+    handle_command "$@"
+    exit $?
 }
 
 # Run main function with all arguments
 main "$@"
-
