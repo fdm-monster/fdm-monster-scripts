@@ -33,7 +33,7 @@ readonly YELLOW='\033[1;33m'
 readonly BLUE='\033[0;34m'
 readonly NC='\033[0m'
 
-readonly CLI_VERSION="1.0.15"
+readonly CLI_VERSION="1.0.16"
 
 # Configuration (see ENVIRONMENT VARIABLE OVERRIDES section above)
 USER_HOME="${FDMM_HOME:-$HOME}"
@@ -514,7 +514,7 @@ handle_command() {
             ;;
         backup)
             local BACKUP_DIR="$USER_HOME/.fdm-monster-backups"
-            local TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+            local TIMESTAMP=$(date +%Y%m%d-%H%M%S%z)
             local BACKUP_FILE="$BACKUP_DIR/fdm-monster-$TIMESTAMP.tar.gz"
 
             mkdir -p "$BACKUP_DIR"
