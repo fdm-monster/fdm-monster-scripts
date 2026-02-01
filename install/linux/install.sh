@@ -514,7 +514,7 @@ handle_command() {
             ;;
         backup)
             local BACKUP_DIR="$USER_HOME/.fdm-monster-backups"
-            local TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+            local TIMESTAMP=$(date +%Y%m%d-%H%M%S%z)
             local BACKUP_FILE="$BACKUP_DIR/fdm-monster-$TIMESTAMP.tar.gz"
 
             mkdir -p "$BACKUP_DIR"
