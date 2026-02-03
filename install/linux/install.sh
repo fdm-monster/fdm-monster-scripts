@@ -9,6 +9,8 @@
 #
 # FDMM_HOME                 - Home directory to use (default: $HOME)
 #                             Useful for chroot installations or custom user setups
+# FDMM_SERVICE_USER         - User to run the systemd service as (default: $USER)
+#                             Useful for chroot installations where $USER may not be set correctly
 # FDMM_NODE_VERSION         - Node.js version to install (default: 24.12.0)
 # FDMM_NPM_PACKAGE          - NPM package to install (default: @fdm-monster/server)
 # FDMM_NPM_PACKAGE_VERSION  - NPM package version to install (default: latest)
@@ -33,10 +35,11 @@ readonly YELLOW='\033[1;33m'
 readonly BLUE='\033[0;34m'
 readonly NC='\033[0m'
 
-readonly CLI_VERSION="1.0.16"
+readonly CLI_VERSION="1.0.17"
 
 # Configuration (see ENVIRONMENT VARIABLE OVERRIDES section above)
 USER_HOME="${FDMM_HOME:-$HOME}"
+SERVICE_USER="${FDMM_SERVICE_USER:-$USER}"
 NODE_VERSION="${FDMM_NODE_VERSION:-24.12.0}"
 NPM_PACKAGE="${FDMM_NPM_PACKAGE:-@fdm-monster/server}"
 NPM_PACKAGE_VERSION="${FDMM_NPM_PACKAGE_VERSION:-}"
@@ -366,7 +369,7 @@ After=network.target
 
 [Service]
 Type=simple
-User=$USER
+User=$SERVICE_USER
 WorkingDirectory=$DATA_DIR
 Environment="ENV_FILE=$DATA_DIR/.env"
 ExecStart=$INSTALL_DIR/nodejs/bin/node $INSTALL_DIR/node_modules/$NPM_PACKAGE/dist/index.js

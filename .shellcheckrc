@@ -1,0 +1,12 @@
+# Shellcheck configuration for FDM Monster scripts
+# https://www.shellcheck.net/wiki/
+
+# Ignore warnings about following sourced files (SC1091)
+# This is expected for dynamically sourced files
+disable=SC1091
+
+# Enable all optional checks
+enable=all
+
+# Use bash as the shell
+shell=bash
