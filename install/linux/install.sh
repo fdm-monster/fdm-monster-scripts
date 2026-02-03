@@ -449,7 +449,7 @@ handle_command() {
             if command -v systemctl &> /dev/null; then
                 sudo systemctl restart fdm-monster
             else
-                $0 stop && sleep 2 && $0 start
+                ${0} stop && sleep 2 && ${0} start
             fi
             ;;
         status)
@@ -491,7 +491,7 @@ handle_command() {
             fi
 
             print_info "Upgrading FDM Monster to $VERSION_DISPLAY..."
-            $0 stop
+            ${0} stop
 
             # Ensure Node.js and Yarn are available
             print_info "Checking FDM Monster requirements..."
@@ -640,7 +640,7 @@ handle_command() {
             ;;
         uninstall)
             print_warning "Uninstalling FDM Monster..."
-            $0 stop
+            ${0} stop
             if command -v systemctl &> /dev/null; then
                 sudo systemctl disable fdm-monster 2>/dev/null || true
                 sudo rm -f /etc/systemd/system/fdm-monster.service

@@ -39,17 +39,17 @@ cat<<-EOH
 EOH
 
 echo -n "  Please enter the name to be used for the docker macvlan network: "
-read name
+read -r name
 echo -n "  Please enter the interface to bind the network to: "
-read interface
+read -r interface
 echo -n "  Please enter the network in cidr notation: "
-read network
-echo -n "  Please enter the IP subnet in cdir notation that is dedicated to the $name bridge: "
-read subnet
-echo -n "  Please enter tha default gateway for $network: "
-read gateway
+read -r network
+echo -n "  Please enter the IP subnet in cdir notation that is dedicated to the ${name} bridge: "
+read -r subnet
+echo -n "  Please enter tha default gateway for ${network}: "
+read -r gateway
 echo -n "  Please enter the IP to assign to the FDM Monster container: "
-read ip
+read -r ip
 
 
 cat << EOD
@@ -62,9 +62,9 @@ echo -n "  execute (y/N)? "
 read -rn 1 resp
 echo
 
-if [[ "$resp" == "y" || "$resp" == "Y" ]]
+if [[ "${resp}" == "y" || "${resp}" == "Y" ]]
 then
-   docker network create -d macvlan --subnet=${network} --ip-range=${subnet} --gateway=${gateway} -o parent=${interface} ${name}
+   docker network create -d macvlan --subnet="${network}" --ip-range="${subnet}" --gateway="${gateway}" -o parent="${interface}" "${name}"
 else
   echo "  Please make sure you have the needed mavlan bridge created."
 fi
@@ -113,7 +113,7 @@ echo -e "${docker_compose}"
 echo -en "\n\n  Woould you like me to write the above to FDM-mDNS-docker-compose.yml? (y/N): "
 read -rn 1 resp
 
-if [[ "$resp" == "y" || "$resp" == "Y" ]]
+if [[ "${resp}" == "y" || "${resp}" == "Y" ]]
 then
 	echo "${docker_compose}" > ./FDMM-mDNS-docker-compose.yml
 	echo -e "  File written\n\n"

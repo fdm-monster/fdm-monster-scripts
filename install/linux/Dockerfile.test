@@ -11,6 +11,7 @@ RUN apt-get update && apt-get install -y \
     ca-certificates \
     tar \
     gzip \
+    xz-utils \
     && rm -rf /var/lib/apt/lists/*
 
 # Create a test user (simulating non-root installation)
