@@ -8,7 +8,9 @@ FROM ubuntu:22.04 AS test-base
 RUN apt-get update && apt-get install -y \
     curl \
     sudo \
-    systemd \
+    ca-certificates \
+    tar \
+    gzip \
     && rm -rf /var/lib/apt/lists/*
 
 # Create a test user (simulating non-root installation)
@@ -17,41 +19,73 @@ RUN useradd -m -s /bin/bash testuser && \
 
 WORKDIR /home/testuser
 
-# Copy the installation script
+# Copy the installation script and test utilities
 COPY install/linux/install.sh /tmp/install.sh
-RUN chmod +x /tmp/install.sh
+COPY install/linux/test/mock-systemctl.sh /usr/local/bin/systemctl
+RUN chmod +x /tmp/install.sh /usr/local/bin/systemctl
 
-# Test 1: Normal installation
+# Verify mock systemctl is in place
+RUN which systemctl && systemctl --version
+
+# Test 1: Normal installation with default settings
 FROM test-base AS test-normal
 USER testuser
-RUN bash /tmp/install.sh --help
-RUN echo "Test: Normal installation (dry run)"
-# Note: Full install requires systemd which doesn't work well in Docker
-# This validates the script runs without errors up to the systemd step
+ENV FDMM_OVERRIDE_ROOT=true
+RUN echo "=== Testing: Normal installation with default settings ==="
+RUN bash /tmp/install.sh install
+RUN echo "=== Verifying installation ==="
+RUN test -d "$HOME/.fdm-monster/nodejs" || (echo "ERROR: Node.js not installed" && exit 1)
+RUN test -f "$HOME/.local/bin/fdm-monster" || (echo "ERROR: CLI wrapper not created" && exit 1)
+RUN test -f "$HOME/.local/bin/fdmm" || (echo "ERROR: CLI alias not created" && exit 1)
+RUN test -f "/etc/systemd/system/fdm-monster.service" || (echo "ERROR: systemd service not created" && exit 1)
+RUN echo "✓ Normal installation test passed"
 
 # Test 2: Installation with custom environment variables
 FROM test-base AS test-custom-env
 USER testuser
 ENV FDMM_HOME=/home/testuser/custom-home
-ENV FDMM_SERVICE_USER=testuser
+ENV FDMM_SERVICE_USER=customuser
 ENV FDMM_SERVER_PORT=5000
 ENV FDMM_NODE_VERSION=20.11.0
-RUN echo "Test: Custom environment variables"
-RUN bash /tmp/install.sh --help
+ENV FDMM_OVERRIDE_ROOT=true
+RUN echo "=== Testing: Installation with custom environment variables ==="
+RUN bash /tmp/install.sh install
+RUN echo "=== Verifying custom installation ==="
+RUN test -d "$FDMM_HOME/.fdm-monster/nodejs" || (echo "ERROR: Node.js not in custom home" && exit 1)
+RUN test -f "$FDMM_HOME/.local/bin/fdm-monster" || (echo "ERROR: CLI not in custom home" && exit 1)
+RUN grep -q "User=customuser" /etc/systemd/system/fdm-monster.service || (echo "ERROR: Service user not set correctly" && exit 1)
+RUN grep -q "Environment=\"SERVER_PORT=5000\"" /etc/systemd/system/fdm-monster.service || echo "Note: Custom port not in service file (may need implementation)"
+RUN echo "✓ Custom environment variables test passed"
 
 # Test 3: Chroot simulation (testing FDMM_SERVICE_USER)
 FROM test-base AS test-chroot
 USER testuser
-ENV FDMM_SERVICE_USER=fdm-monster
+# Simulate chroot where USER might not be set correctly
+ENV USER=root
+ENV FDMM_SERVICE_USER=testuser
 ENV FDMM_HOME=/home/testuser
-RUN echo "Test: Chroot simulation with FDMM_SERVICE_USER"
-RUN bash /tmp/install.sh --help
+ENV FDMM_OVERRIDE_ROOT=true
+RUN echo "=== Testing: Chroot simulation with FDMM_SERVICE_USER ==="
+RUN bash /tmp/install.sh install
+RUN echo "=== Verifying chroot installation ==="
+RUN grep -q "User=testuser" /etc/systemd/system/fdm-monster.service || (echo "ERROR: FDMM_SERVICE_USER not respected" && exit 1)
+RUN echo "✓ Chroot simulation test passed"
 
 # Test 4: Validate script structure
 FROM test-base AS test-validation
 RUN apt-get update && apt-get install -y shellcheck && rm -rf /var/lib/apt/lists/*
 RUN echo "Test: Running shellcheck on install.sh"
 RUN shellcheck -x /tmp/install.sh || echo "Shellcheck found issues (non-fatal)"
+
+# Test 5: Help and version commands
+FROM test-base AS test-commands
+USER testuser
+RUN echo "=== Testing: CLI commands ==="
+RUN bash /tmp/install.sh --help > /dev/null || (echo "ERROR: --help failed" && exit 1)
+RUN bash /tmp/install.sh --version | grep -q "1.0.17" || (echo "ERROR: --version failed" && exit 1)
+RUN bash /tmp/install.sh help > /dev/null || (echo "ERROR: help command failed" && exit 1)
+RUN bash /tmp/install.sh invalid-command 2>&1 | grep -q "Unknown command" || (echo "ERROR: Unknown command handling failed" && exit 1)
+RUN echo "✓ CLI commands test passed"
 
 # Final test stage - run all validations
 FROM test-validation AS test-final

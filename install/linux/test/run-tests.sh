@@ -58,7 +58,7 @@ run_docker() {
     cd "$ROOT_DIR"
 
     # Build and run all test stages
-    local targets=("test-normal" "test-custom-env" "test-chroot" "test-validation")
+    local targets=("test-normal" "test-custom-env" "test-chroot" "test-validation" "test-commands")
 
     for target in "${targets[@]}"; do
         echo -e "\n${YELLOW}Testing: $target${NC}"
