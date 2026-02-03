@@ -9,6 +9,8 @@
 #
 # FDMM_HOME                 - Home directory to use (default: $HOME)
 #                             Useful for chroot installations or custom user setups
+# FDMM_SERVICE_USER         - User to run the systemd service as (default: $USER)
+#                             Useful for chroot installations where $USER may not be set correctly
 # FDMM_NODE_VERSION         - Node.js version to install (default: 24.12.0)
 # FDMM_NPM_PACKAGE          - NPM package to install (default: @fdm-monster/server)
 # FDMM_NPM_PACKAGE_VERSION  - NPM package version to install (default: latest)
@@ -33,10 +35,11 @@ readonly YELLOW='\033[1;33m'
 readonly BLUE='\033[0;34m'
 readonly NC='\033[0m'
 
-readonly CLI_VERSION="1.0.16"
+readonly CLI_VERSION="1.0.17"
 
 # Configuration (see ENVIRONMENT VARIABLE OVERRIDES section above)
 USER_HOME="${FDMM_HOME:-$HOME}"
+SERVICE_USER="${FDMM_SERVICE_USER:-$USER}"
 NODE_VERSION="${FDMM_NODE_VERSION:-24.12.0}"
 NPM_PACKAGE="${FDMM_NPM_PACKAGE:-@fdm-monster/server}"
 NPM_PACKAGE_VERSION="${FDMM_NPM_PACKAGE_VERSION:-}"
@@ -366,7 +369,7 @@ After=network.target
 
 [Service]
 Type=simple
-User=$USER
+User=$SERVICE_USER
 WorkingDirectory=$DATA_DIR
 Environment="ENV_FILE=$DATA_DIR/.env"
 ExecStart=$INSTALL_DIR/nodejs/bin/node $INSTALL_DIR/node_modules/$NPM_PACKAGE/dist/index.js
@@ -446,7 +449,7 @@ handle_command() {
             if command -v systemctl &> /dev/null; then
                 sudo systemctl restart fdm-monster
             else
-                $0 stop && sleep 2 && $0 start
+                ${0} stop && sleep 2 && ${0} start
             fi
             ;;
         status)
@@ -488,7 +491,7 @@ handle_command() {
             fi
 
             print_info "Upgrading FDM Monster to $VERSION_DISPLAY..."
-            $0 stop
+            ${0} stop
 
             # Ensure Node.js and Yarn are available
             print_info "Checking FDM Monster requirements..."
@@ -568,6 +571,40 @@ handle_command() {
         version|--version|-v)
             echo "FDM Monster CLI v$CLI_VERSION"
             ;;
+        help|--help|-h)
+            echo "FDM Monster CLI v$CLI_VERSION"
+            echo ""
+            echo "Usage: fdm-monster {install|start|stop|restart|status|logs|upgrade [version]|backup|update-cli [url]|version|uninstall}"
+            echo "Alias: fdmm"
+            echo ""
+            echo "Commands:"
+            echo "  install            - (Re)install FDM Monster"
+            echo "  install-user       - User-level installation (nodejs, yarn, fdm-monster, CLI wrapper)"
+            echo "  install-root       - Root-level installation (systemd service setup)"
+            echo "  start              - Start FDM Monster"
+            echo "  stop               - Stop FDM Monster"
+            echo "  restart            - Restart FDM Monster"
+            echo "  status             - Check if FDM Monster is running"
+            echo "  logs               - View logs"
+            echo "  upgrade [ver]      - Upgrade to latest or specified version"
+            echo "  backup             - Backup data directory to ~/.fdm-monster-backups"
+            echo "  update-cli [url]   - Update the CLI tool itself (optionally from custom URL)"
+            echo "  version            - Show CLI version"
+            echo "  uninstall          - Remove FDM Monster"
+            echo ""
+            echo "Examples:"
+            echo "  fdmm install                              # (Re)install FDM Monster"
+            echo "  fdmm install-user                         # Install user-level components only"
+            echo "  fdmm install-root                         # Install root-level components only"
+            echo "  fdmm status                               # Check status"
+            echo "  fdmm backup                               # Create backup"
+            echo "  fdmm upgrade                              # Upgrade to latest"
+            echo "  fdmm upgrade x.y.z                        # Upgrade to specific version"
+            echo "  fdmm update-cli                           # Update CLI tool from default URL"
+            echo "  fdmm update-cli https://example.com/cli   # Update CLI from custom URL"
+            echo "  fdmm version                              # Show CLI version"
+            exit 0
+            ;;
         install)
             print_banner
             check_root
@@ -603,7 +640,7 @@ handle_command() {
             ;;
         uninstall)
             print_warning "Uninstalling FDM Monster..."
-            $0 stop
+            ${0} stop
             if command -v systemctl &> /dev/null; then
                 sudo systemctl disable fdm-monster 2>/dev/null || true
                 sudo rm -f /etc/systemd/system/fdm-monster.service
@@ -630,37 +667,9 @@ handle_command() {
             fi
             ;;
         *)
-            echo "FDM Monster CLI v$CLI_VERSION"
+            echo "Error: Unknown command '$1'"
             echo ""
-            echo "Usage: fdm-monster {install|start|stop|restart|status|logs|upgrade [version]|backup|update-cli [url]|version|uninstall}"
-            echo "Alias: fdmm"
-            echo ""
-            echo "Commands:"
-            echo "  install            - (Re)install FDM Monster"
-            echo "  install-user       - User-level installation (nodejs, yarn, fdm-monster, CLI wrapper)"
-            echo "  install-root       - Root-level installation (systemd service setup)"
-            echo "  start              - Start FDM Monster"
-            echo "  stop               - Stop FDM Monster"
-            echo "  restart            - Restart FDM Monster"
-            echo "  status             - Check if FDM Monster is running"
-            echo "  logs               - View logs"
-            echo "  upgrade [ver]      - Upgrade to latest or specified version"
-            echo "  backup             - Backup data directory to ~/.fdm-monster-backups"
-            echo "  update-cli [url]   - Update the CLI tool itself (optionally from custom URL)"
-            echo "  version            - Show CLI version"
-            echo "  uninstall          - Remove FDM Monster"
-            echo ""
-            echo "Examples:"
-            echo "  fdmm install                              # (Re)install FDM Monster"
-            echo "  fdmm install-user                         # Install user-level components only"
-            echo "  fdmm install-root                         # Install root-level components only"
-            echo "  fdmm status                               # Check status"
-            echo "  fdmm backup                               # Create backup"
-            echo "  fdmm upgrade                              # Upgrade to latest"
-            echo "  fdmm upgrade x.y.z                        # Upgrade to specific version"
-            echo "  fdmm update-cli                           # Update CLI tool from default URL"
-            echo "  fdmm update-cli https://example.com/cli   # Update CLI from custom URL"
-            echo "  fdmm version                              # Show CLI version"
+            echo "Run 'fdm-monster --help' for usage information."
             exit 1
             ;;
     esac
