@@ -3,7 +3,7 @@
 
 # Ignore warnings about following sourced files (SC1091)
 # This is expected for dynamically sourced files
-disable=SC1091
+disable=SC1091,SC2250
 
 # Enable all optional checks
 enable=all
