@@ -2,7 +2,7 @@
 # Usage: docker build -f Dockerfile.test -t fdm-monster-install-test .
 #        docker run --rm fdm-monster-install-test
 
-FROM ubuntu:22.04 as test-base
+FROM ubuntu:22.04 AS test-base
 
 # Install dependencies
 RUN apt-get update && apt-get install -y \
@@ -22,7 +22,7 @@ COPY install/linux/install.sh /tmp/install.sh
 RUN chmod +x /tmp/install.sh
 
 # Test 1: Normal installation
-FROM test-base as test-normal
+FROM test-base AS test-normal
 USER testuser
 RUN bash /tmp/install.sh --help
 RUN echo "Test: Normal installation (dry run)"
@@ -30,7 +30,7 @@ RUN echo "Test: Normal installation (dry run)"
 # This validates the script runs without errors up to the systemd step
 
 # Test 2: Installation with custom environment variables
-FROM test-base as test-custom-env
+FROM test-base AS test-custom-env
 USER testuser
 ENV FDMM_HOME=/home/testuser/custom-home
 ENV FDMM_SERVICE_USER=testuser
@@ -40,7 +40,7 @@ RUN echo "Test: Custom environment variables"
 RUN bash /tmp/install.sh --help
 
 # Test 3: Chroot simulation (testing FDMM_SERVICE_USER)
-FROM test-base as test-chroot
+FROM test-base AS test-chroot
 USER testuser
 ENV FDMM_SERVICE_USER=fdm-monster
 ENV FDMM_HOME=/home/testuser
@@ -48,12 +48,12 @@ RUN echo "Test: Chroot simulation with FDMM_SERVICE_USER"
 RUN bash /tmp/install.sh --help
 
 # Test 4: Validate script structure
-FROM test-base as test-validation
+FROM test-base AS test-validation
 RUN apt-get update && apt-get install -y shellcheck && rm -rf /var/lib/apt/lists/*
 RUN echo "Test: Running shellcheck on install.sh"
 RUN shellcheck -x /tmp/install.sh || echo "Shellcheck found issues (non-fatal)"
 
 # Final test stage - run all validations
-FROM test-validation as test-final
+FROM test-validation AS test-final
 RUN echo "All tests passed!"
 CMD ["/bin/bash", "-c", "echo 'Installation script tests completed successfully'"]
