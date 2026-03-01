@@ -2,7 +2,7 @@
 # Usage: docker build -f Dockerfile.test -t fdm-monster-install-test .
 #        docker run --rm fdm-monster-install-test
 
-FROM ubuntu:22.04 AS test-base
+FROM ubuntu:24.04 AS test-base
 
 # Install dependencies
 RUN apt-get update && apt-get install -y \
